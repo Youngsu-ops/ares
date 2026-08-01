@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="/" class="nav-brand">{{ .SiteName }}</a><div class="nav-links"><a href="/">首页</a><a href="/sections">专栏</a></div></div></nav>
+<div class="container">
+    <div class="purchase-card">
+        <h2>确认购买</h2>
+        <p>{{ .Section.Name }}</p>
+        <p style="color:#6e6e73;">{{ .Section.Description }}</p>
+        <div class="price" style="font-size:48px;">{{ formatPrice .Section.Price }}</div>
+        <form method="POST" action="/section/{{ .Section.Slug }}/purchase">
+            <p style="font-size:12px;color:#86868b;margin-bottom:16px;">此为演示系统，点击确认即完成购买</p>
+            <button type="submit" class="btn btn-primary">确认支付 {{ formatPrice .Section.Price }}</button>
+        </form>
+        <p style="margin-top:16px;"><a href="/section/{{ .Section.Slug }}" style="color:#86868b;">返回专栏</a></p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links"><a href="/">首页</a></div>
+    </div>
+</nav>
+<div class="container" style="text-align:center;padding:80px 0;">
+    <h1 style="font-size:72px;background:linear-gradient(135deg,#007AFF,#5856D6,#AF52DE);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">404</h1>
+    <p style="font-size:20px;color:#6e6e73;margin:16px 0 32px;">你来到了未知领域</p>
+    <a href="/" class="btn btn-primary">返回首页</a>
+</div>
+</body>
+</html>

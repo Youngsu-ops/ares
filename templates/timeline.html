@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "{{ .SiteName }}",
+      "description": "{{ .SiteDesc }}",
+      "url": "{{ .SiteURL }}/",
+      "author": { "@type": "Person", "name": "{{ .SiteAuthor }}" }
+    }
+    </script>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links">
+            <a href="/">首页</a>
+            <a href="/sections">专栏</a>
+            <a href="/about">关于</a>
+            <a href="/feed" target="_blank">RSS</a>
+        </div>
+        <form class="nav-search" action="/search" method="GET">
+            <input type="text" name="q" placeholder="搜索文章...">
+        </form>
+        <div class="nav-user">
+            {{ if .CurrentUser }}
+            <span class="nav-avatar">{{ slice .CurrentUser.Username 0 1 }}</span>
+            <a href="/auth/logout">退出</a>
+            {{ if eq .CurrentUser.Role "admin" }}<a href="{{ adminPrefix }}/dashboard">管理</a>{{ end }}
+            {{ else }}
+            <a href="/auth/login">登录</a>
+            <a href="/auth/register">注册</a>
+            {{ end }}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="hero">
+        <h1>{{ .SiteName }}</h1>
+        <p class="hero-motto">人生是一场属于勇敢者的无限冒险游戏</p>
+        <p class="hero-desc">{{ .SiteDesc }}</p>
+    </div>
+
+    {{ if eq (len .Posts) 0 }}
+    <div class="empty-state"><p>还没有文章，敬请期待</p></div>
+    {{ else }}
+    <div class="timeline">
+        {{ range $index, $post := .Posts }}
+        <a href="/post/{{ $post.Slug }}" class="timeline-node" style="animation-delay: 0.{{ $index }}s">
+            <div class="timeline-dot">
+                <span class="timeline-dot-date">{{ dateFmt $post.CreatedAt }}</span>
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-date">{{ dateFmt $post.CreatedAt }}</div>
+                {{ if $post.Pinned }}<div class="timeline-pinned">📌 置顶</div>{{ end }}
+                {{ if gt (len $post.Sections) 0 }}
+                    {{ range $post.Sections }}
+                        {{ if gt .Price 0.0 }}
+                        <span class="paid-badge">¥{{ printf "%.0f" .Price }} 付费</span>
+                        {{ end }}
+                    {{ end }}
+                {{ end }}
+                {{ if $post.CoverImage }}
+                <img class="timeline-cover" src="{{ $post.CoverImage }}" alt="{{ $post.Title }}" loading="lazy">
+                {{ end }}
+                <h2>{{ $post.Title }}</h2>
+                <p>{{ $post.Excerpt }}</p>
+                <div class="timeline-meta">
+                    {{ if $post.Category }}
+                    <span class="timeline-category">{{ $post.Category.Name }}</span>
+                    {{ end }}
+                    <span class="timeline-views">{{ $post.Views }} 阅读</span>
+                    {{ range $post.Tags }}
+                    <span class="timeline-tag">#{{ .Name }}</span>
+                    {{ end }}
+                </div>
+            </div>
+        </a>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

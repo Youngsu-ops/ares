@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links"><a href="/">首页</a><a href="/sections">专栏</a></div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="purchase-card">
+        <div class="lock-icon">🔒</div>
+        <h2>{{ if .Post }}{{ .Post.Title }}{{ end }}</h2>
+        <p style="color:#6e6e73;margin:8px 0;">此文章属于付费专栏，购买后即可阅读</p>
+        {{ range .Sections }}
+        <div style="padding:16px;margin:12px 0;background:rgba(0,122,255,0.04);border-radius:12px;">
+            <div style="font-weight:600;">{{ .Name }}</div>
+            <div class="price">{{ formatPrice .Price }}</div>
+        </div>
+        {{ end }}
+        {{ if .RequireAuth }}
+        <p style="margin:16px 0;color:#86868b;">请先<a href="/auth/login" style="color:#007AFF;">登录</a>或<a href="/auth/register" style="color:#007AFF;">注册</a>后购买</p>
+        {{ else }}
+        {{ range .Sections }}
+        <a href="/section/{{ .Slug }}/purchase" class="btn btn-primary" style="margin-top:12px;">立即购买 - {{ formatPrice .Price }}</a>
+        {{ end }}
+        {{ end }}
+        <p style="margin-top:16px;"><a href="/" style="color:#86868b;">返回首页</a></p>
+    </div>
+</div>
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

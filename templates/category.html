@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links">
+            <a href="/">首页</a><a href="/sections">专栏</a><a href="/about">关于</a>
+        </div>
+        <form class="nav-search" action="/search" method="GET">
+            <input type="text" name="q" placeholder="搜索文章..." value="{{ .SearchQuery }}">
+        </form>
+        <div class="nav-user">
+            {{ if .CurrentUser }}
+            <span class="nav-avatar">{{ slice .CurrentUser.Username 0 1 }}</span>
+            <a href="/auth/logout">退出</a>
+            {{ else }}
+            <a href="/auth/login">登录</a><a href="/auth/register">注册</a>
+            {{ end }}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="content-layout">
+        <div class="content-main">
+            {{ if .CategoryName }}
+            <h2 class="page-title">分类: {{ .CategoryName }}</h2>
+            {{ else if .SearchQuery }}
+            <h2 class="page-title">搜索: "{{ .SearchQuery }}" ({{ len .Posts }} 篇)</h2>
+            {{ end }}
+
+            {{ if eq (len .Posts) 0 }}
+            <div class="empty-state"><p>暂无文章</p></div>
+            {{ else }}
+            <div class="timeline" style="padding:0;">
+            {{ range $index, $post := .Posts }}
+            <a href="/post/{{ $post.Slug }}" class="timeline-node" style="margin:24px 0;">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content" style="max-width:100%;">
+                    <div class="timeline-date">{{ dateFmt $post.CreatedAt }}</div>
+                    {{ if $post.CoverImage }}
+                    <img class="timeline-cover" src="{{ $post.CoverImage }}" alt="{{ $post.Title }}" loading="lazy">
+                    {{ end }}
+                    <h2>{{ $post.Title }}</h2>
+                    <p>{{ $post.Excerpt }}</p>
+                    <div class="timeline-meta">
+                        {{ if $post.Category }}
+                        <span class="timeline-category">{{ $post.Category.Name }}</span>
+                        {{ end }}
+                        <span class="timeline-views">{{ $post.Views }} 阅读</span>
+                    </div>
+                </div>
+            </a>
+            {{ end }}
+            </div>
+            {{ if gt .TotalPages 1 }}
+            <div class="pagination">
+                {{ if gt .CurrentPage 1 }}
+                <a href="?page={{ sub .CurrentPage 1 }}" class="page-btn">&laquo; 上一页</a>
+                {{ end }}
+                {{ range (range1 .TotalPages) }}
+                {{ if eq . $.CurrentPage }}
+                <span class="page-btn active">{{ . }}</span>
+                {{ else }}
+                <a href="?page={{ . }}" class="page-btn">{{ . }}</a>
+                {{ end }}
+                {{ end }}
+                {{ if lt .CurrentPage .TotalPages }}
+                <a href="?page={{ add .CurrentPage 1 }}" class="page-btn">下一页 &raquo;</a>
+                {{ end }}
+            </div>
+            {{ end }}
+            {{ end }}
+        </div>
+        <aside class="content-sidebar">
+            <div class="sidebar-section">
+                <h3>分类</h3>
+                <ul>{{ range .Categories }}<li><a href="/category/{{ .Slug }}">{{ .Name }}</a></li>{{ end }}</ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>专栏</h3>
+                <ul>{{ range .Sections }}<li><a href="/section/{{ .Slug }}">{{ .Name }}{{ if gt .Price 0.0 }} · ¥{{ printf "%.0f" .Price }}{{ end }}</a></li>{{ end }}</ul>
+            </div>
+        </aside>
+    </div>
+</div>
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

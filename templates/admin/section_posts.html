@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>编排板块文章 - {{ .Section.Name }} - {{ .SiteName }}</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a><div class="nav-links"><a href="{{ adminPrefix }}/sections">板块</a></div></div></nav>
+<div class="container" style="max-width:700px;">
+    <h1 class="page-title">编排文章: {{ .Section.Name }}</h1>
+    <p style="color:#6e6e73;margin-bottom:24px;">勾选需要关联到此板块的文章</p>
+    {{ range .AllPosts }}
+    <div style="display:flex;align-items:center;padding:14px;margin-bottom:8px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.08);border-radius:12px;">
+        <form method="POST" action="{{ adminPrefix }}/sections/{{ $.Section.ID }}/posts" style="display:flex;align-items:center;width:100%;gap:14px;">
+            <input type="hidden" name="post_id" value="{{ .ID }}">
+            <input type="checkbox" {{ if index $.SectionPostIDs .ID }}checked{{ end }} onchange="this.form.submit()" style="width:18px;height:18px;accent-color:#007AFF;">
+            <span style="flex:1;font-weight:500;">{{ .Title }}</span>
+            {{ if .Category }}<span style="font-size:12px;color:#86868b;">{{ .Category.Name }}</span>{{ end }}
+            <span style="font-size:12px;color:#86868b;">{{ dateFmt .CreatedAt }}</span>
+        </form>
+    </div>
+    {{ end }}
+    <a href="{{ adminPrefix }}/sections" class="btn btn-outline" style="margin-top:16px;">返回板块列表</a>
+</div>
+</body>
+</html>

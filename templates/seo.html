@@ -1,0 +1,28 @@
+<!-- SEO Meta Tags -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ if .SeoTitle }}{{ .SeoTitle }}{{ else }}{{ .SiteName }}{{ end }}</title>
+<meta name="description" content="{{ if .SeoDesc }}{{ .SeoDesc }}{{ else }}{{ .SiteDesc }}{{ end }}">
+<meta name="keywords" content="{{ .SiteKeywords }}">
+<meta name="author" content="{{ .SiteAuthor }}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="{{ .SeoURL }}">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="{{ if .SeoType }}{{ .SeoType }}{{ else }}website{{ end }}">
+<meta property="og:title" content="{{ if .SeoTitle }}{{ .SeoTitle }}{{ else }}{{ .SiteName }}{{ end }}">
+<meta property="og:description" content="{{ if .SeoDesc }}{{ .SeoDesc }}{{ else }}{{ .SiteDesc }}{{ end }}">
+<meta property="og:url" content="{{ .SeoURL }}">
+<meta property="og:site_name" content="{{ .SiteName }}">
+<meta property="og:locale" content="zh_CN">
+{{ if .SeoImage }}<meta property="og:image" content="{{ .SeoImage }}">
+{{ end }}{{ if .SeoPublishedAt }}<meta property="article:published_time" content="{{ .SeoPublishedAt }}">
+{{ end }}{{ if .SeoModifiedAt }}<meta property="article:modified_time" content="{{ .SeoModifiedAt }}">
+{{ end }}{{ if .SiteAuthor }}<meta property="article:author" content="{{ .SiteAuthor }}">
+{{ end }}
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ if .SeoTitle }}{{ .SeoTitle }}{{ else }}{{ .SiteName }}{{ end }}">
+<meta name="twitter:description" content="{{ if .SeoDesc }}{{ .SeoDesc }}{{ else }}{{ .SiteDesc }}{{ end }}">
+{{ if .SeoImage }}<meta name="twitter:image" content="{{ .SeoImage }}">
+{{ end }}

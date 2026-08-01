@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .IsEdit }}编辑文章{{ else }}新建文章{{ end }} - 管理后台</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <style>
+        /* ============ Editor Container ============ */
+        .md-editor {
+            display: flex; flex-direction: column;
+            border: 1px solid var(--metal-border);
+            border-radius: var(--radius); overflow: hidden;
+            min-height: 560px; background: #fafafa;
+            transition: all 0.3s ease;
+        }
+        .md-editor.fullscreen {
+            position: fixed; inset: 0; z-index: 9999;
+            border-radius: 0; border: none; min-height: 100vh;
+        }
+
+        /* ============ Editor Header ============ */
+        .md-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(180deg, #fff, #f5f5f7);
+            border-bottom: 1px solid var(--metal-border);
+            flex-shrink: 0;
+        }
+        .md-header-left { display: flex; align-items: center; gap: 4px; }
+        .md-header-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+
+        .md-mode-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 14px; border: 1px solid transparent;
+            border-radius: 7px; font-size: 12px; font-weight: 600;
+            cursor: pointer; color: var(--text-secondary);
+            background: transparent; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .md-mode-btn:hover { background: rgba(0,122,255,0.06); color: var(--accent); }
+        .md-mode-btn.active {
+            background: var(--accent-gradient); color: #fff;
+            box-shadow: 0 1px 4px rgba(0,122,255,0.3);
+        }
+
+        .md-header-sep {
+            width: 1px; height: 20px; background: var(--metal-border); margin: 0 4px;
+        }
+
+        .md-icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 28px; border: 1px solid transparent;
+            border-radius: 6px; font-size: 14px; cursor: pointer;
+            color: var(--text-secondary); background: transparent;
+            transition: all 0.15s; position: relative;
+        }
+        .md-icon-btn:hover {
+            background: rgba(0,122,255,0.08); color: var(--accent);
+            border-color: rgba(0,122,255,0.15);
+        }
+        .md-icon-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute; bottom: calc(100% + 6px); left: 50%;
+            transform: translateX(-50%);
+            background: #1d1d1f; color: #fff; font-size: 11px;
+            padding: 3px 10px; border-radius: 5px; white-space: nowrap;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* ============ Toolbar ============ */
+        .md-toolbar {
+            display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+            padding: 6px 10px; background: #fff;
+            border-bottom: 1px solid var(--metal-border);
+            overflow-x: auto; flex-shrink: 0;
+        }
+        .md-toolbar button {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 30px; height: 28px; padding: 0 7px;
+            border: 1px solid transparent; border-radius: 5px;
+            background: transparent; cursor: pointer;
+            font-size: 13px; color: var(--text-secondary);
+            transition: all 0.12s; white-space: nowrap;
+        }
+        .md-toolbar button:hover {
+            background: rgba(0,122,255,0.07); color: var(--accent);
+            border-color: rgba(0,122,255,0.2);
+        }
+        .md-toolbar button:active {
+            background: rgba(0,122,255,0.14); transform: scale(0.96);
+        }
+        .md-toolbar .md-tb-sep {
+            width: 1px; height: 18px; background: var(--metal-border); margin: 0 5px;
+        }
+        .md-tb-label {
+            font-size: 10px; color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 0 3px; font-weight: 600;
+        }
+        .md-tb-bold { font-weight: 700; }
+        .md-tb-italic { font-style: italic; font-family: Georgia, serif; }
+        .md-tb-code { font-family: var(--font-mono); font-size: 12px; }
+
+        /* ============ Editor Body ============ */
+        .md-body {
+            display: flex; flex: 1; min-height: 0;
+        }
+        .md-pane {
+            flex: 1; min-width: 0; display: flex; position: relative;
+        }
+        .md-pane.hidden { display: none; }
+        .md-pane.split { flex: 1; min-width: 0; }
+
+        /* ============ Input Pane ============ */
+        .md-input-wrap {
+            display: flex; flex: 1; position: relative;
+            background: #fefefe;
+        }
+        .md-line-numbers {
+            display: flex; flex-direction: column; align-items: flex-end;
+            padding: 16px 8px 16px 12px;
+            font-family: var(--font-mono); font-size: 13px;
+            line-height: 1.75; color: #c0c0c0;
+            background: #f9f9f9; border-right: 1px solid #eee;
+            user-select: none; overflow: hidden;
+            min-width: 40px; text-align: right; flex-shrink: 0;
+        }
+        .md-input-pane {
+            flex: 1; min-width: 0; padding: 16px;
+        }
+        .md-input-pane textarea {
+            width: 100%; height: 100%; min-height: 430px;
+            border: none; background: transparent; outline: none;
+            font-family: var(--font-mono); font-size: 13px;
+            line-height: 1.75; resize: none; padding: 0;
+            color: var(--text-primary); tab-size: 2;
+            -moz-tab-size: 2;
+        }
+        .md-input-pane textarea::placeholder { color: #bbb; }
+
+        /* ============ Preview Pane ============ */
+        .md-preview-pane {
+            flex: 1; padding: 20px 24px;
+            overflow-y: auto; background: #fff;
+            border-left: 1px solid var(--metal-border);
+        }
+        .md-preview-pane.full-preview {
+            border-left: none;
+        }
+
+        /* Preview content styling */
+        .md-preview-body { max-width: 800px; margin: 0 auto; }
+        .md-preview-body h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .md-preview-body h2 { font-size: 22px; font-weight: 700; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; }
+        .md-preview-body h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px; }
+        .md-preview-body h4 { font-size: 15px; font-weight: 600; margin: 12px 0 6px; }
+        .md-preview-body p { margin: 10px 0; line-height: 1.8; color: #333; }
+        .md-preview-body a { color: var(--accent); text-decoration: none; }
+        .md-preview-body a:hover { text-decoration: underline; }
+        .md-preview-body blockquote {
+            border-left: 3px solid var(--accent); padding: 10px 16px;
+            margin: 12px 0; background: rgba(0,122,255,0.03);
+            border-radius: 0 8px 8px 0; color: #555;
+        }
+        .md-preview-body :not(pre) > code {
+            background: rgba(175,82,222,0.08); color: #AF52DE;
+            padding: 2px 6px; border-radius: 4px;
+            font-family: var(--font-mono); font-size: 13px;
+        }
+        .md-preview-body pre {
+            background: #f6f8fa; border: 1px solid #e8eaed;
+            border-radius: 8px; padding: 16px 20px; margin: 12px 0;
+            overflow-x: auto; font-size: 13px; line-height: 1.6;
+        }
+        .md-preview-body pre code { background: none; padding: 0; color: #24292e; }
+        .md-preview-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
+        .md-preview-body video { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .md-preview-body audio { width: 100%; margin: 8px 0; }
+        .md-preview-body ul, .md-preview-body ol { padding-left: 24px; margin: 10px 0; }
+        .md-preview-body li { margin: 4px 0; line-height: 1.7; }
+        .md-preview-body hr { border: none; border-top: 1px solid #e0e0e0; margin: 20px 0; }
+        .md-preview-body table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .md-preview-body th, .md-preview-body td { border: 1px solid #e0e0e0; padding: 8px 12px; text-align: left; }
+        .md-preview-body th { background: #f6f8fa; font-weight: 600; }
+        .md-preview-body tr:nth-child(even) { background: #fafbfc; }
+        .md-preview-body input[type="checkbox"] { margin-right: 6px; }
+
+        /* ============ Empty State ============ */
+        .preview-empty {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100%; min-height: 300px;
+            color: #ccc; text-align: center;
+        }
+        .preview-empty .pe-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+        .preview-empty .pe-title { font-size: 16px; font-weight: 500; color: #999; margin-bottom: 6px; }
+        .preview-empty .pe-hint { font-size: 12px; color: #bbb; }
+
+        /* ============ Status Bar ============ */
+        .md-status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 14px; background: #f6f8fa;
+            border-top: 1px solid #e0e0e0; font-size: 11px;
+            color: var(--text-tertiary); flex-shrink: 0;
+        }
+        .md-status-left, .md-status-right { display: flex; gap: 16px; align-items: center; }
+        .md-status-saved { color: var(--success); display: none; }
+        .md-status-unsaved { color: var(--warning); }
+        .md-status-dot {
+            display: inline-block; width: 6px; height: 6px;
+            border-radius: 50%; margin-right: 4px; vertical-align: middle;
+        }
+        .dot-green { background: var(--success); }
+        .dot-orange { background: var(--warning); }
+
+        /* ============ Drag & Drop Overlay ============ */
+        .md-drop-overlay {
+            display: none; position: absolute; inset: 0;
+            background: rgba(0,122,255,0.08); z-index: 5;
+            border: 2px dashed var(--accent); border-radius: 12px;
+            align-items: center; justify-content: center;
+            font-size: 16px; color: var(--accent); font-weight: 600;
+            pointer-events: none; margin: 8px;
+        }
+        .md-drop-overlay.active { display: flex; }
+
+        /* ============ Fullscreen close button ============ */
+        .md-fullscreen-close {
+            display: none; position: fixed; top: 16px; right: 24px;
+            z-index: 10001; width: 40px; height: 40px;
+            border-radius: 20px; border: none; background: rgba(0,0,0,0.6);
+            color: #fff; font-size: 18px; cursor: pointer;
+            align-items: center; justify-content: center;
+        }
+        .md-fullscreen-close.visible { display: flex; }
+
+        @media (max-width: 900px) {
+            .md-body { flex-direction: column; }
+            .md-preview-pane { max-height: 350px; border-left: none; border-top: 1px solid var(--metal-border); }
+            .md-input-pane textarea { min-height: 250px; }
+            .md-toolbar { gap: 1px; padding: 4px 6px; }
+            .md-toolbar button { min-width: 26px; height: 24px; font-size: 11px; }
+            .md-tb-label { display: none; }
+            .md-line-numbers { display: none; }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar"><div class="nav-container">
+    <a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a>
+    <div class="nav-links">
+        <a href="{{ adminPrefix }}/posts">文章列表</a><a href="{{ adminPrefix }}/sections">板块</a>
+        <a href="{{ adminPrefix }}/categories">分类</a><a href="{{ adminPrefix }}/comments">评论</a>
+        <a href="/">← 前台</a>
+    </div>
+</div></nav>
+
+<div class="container" style="max-width:1200px;">
+    <h1>{{ if .IsEdit }}编辑文章{{ else }}新建文章{{ end }}</h1>
+    {{ if .Error }}<div class="alert-error">{{ .Error }}</div>{{ end }}
+
+    <form method="POST" id="post-form" {{ if .IsEdit }}action="{{ adminPrefix }}/posts/{{ .Post.ID }}/edit"{{ else }}action="{{ adminPrefix }}/posts/new"{{ end }}>
+        <!-- ============ 基本信息 ============ -->
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group" style="flex:3;"><label>标题 *</label><input type="text" name="title" id="post-title" value="{{ if .Post }}{{ .Post.Title }}{{ end }}" required placeholder="输入文章标题..."></div>
+                <div class="form-group" style="flex:1;"><label>Slug</label><input type="text" name="slug" id="post-slug" value="{{ if .Post }}{{ .Post.Slug }}{{ end }}" placeholder="自动生成"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;"><label>摘要</label><input type="text" name="excerpt" value="{{ if .Post }}{{ .Post.Excerpt }}{{ end }}" placeholder="简短描述（留空自动截取）"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>分类</label>
+                    <select name="category_id" style="width:100%;padding:12px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;font-size:14px;background:rgba(255,255,255,0.72);">
+                        {{ range .Categories }}
+                        <option value="{{ .ID }}" {{ if and $.Post (eq $.Post.CategoryID .ID) }}selected{{ end }}>{{ .Name }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+                <div class="form-group"><label>状态</label>
+                    <select name="status" style="width:100%;padding:12px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;font-size:14px;background:rgba(255,255,255,0.72);">
+                        <option value="published" {{ if and .Post (eq .Post.Status "published") }}selected{{ end }}>已发布</option>
+                        <option value="draft" {{ if and .Post (eq .Post.Status "draft") }}selected{{ end }}>草稿</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>标签（逗号分隔）</label><input type="text" name="tags" id="post-tags" value="{{ .TagNames }}" placeholder="Go, Gin, Markdown"></div>
+            </div>
+        </div>
+
+        <!-- ============ 所属板块 ============ -->
+        <div class="form-section">
+            <h2>所属板块</h2>
+            <div class="section-checklist">
+                {{ range .Sections }}
+                <label class="section-check-item">
+                    <input type="checkbox" name="section_ids" value="{{ .ID }}" {{ if and $.PostSectionIDs (index $.PostSectionIDs .ID) }}checked{{ end }}>
+                    {{ .Name }}{{ if gt .Price 0.0 }} · ¥{{ printf "%.0f" .Price }}{{ end }}
+                </label>
+                {{ else }}
+                <span style="color:var(--text-tertiary);font-size:14px;">暂无可选板块，请先在「板块」中创建</span>
+                {{ end }}
+            </div>
+        </div>
+
+        <!-- ============ 富媒体 ============ -->
+        <div class="form-section">
+            <h2>富媒体</h2>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;"><label>封面图片 URL</label><input type="text" name="cover_image" value="{{ if .Post }}{{ .Post.CoverImage }}{{ end }}" placeholder="https://..."></div>
+                <div class="form-group" style="flex:1;"><label>音频 URL</label><input type="text" name="audio_url" value="{{ if .Post }}{{ .Post.AudioURL }}{{ end }}" placeholder="https://...mp3"></div>
+                <div class="form-group" style="flex:1;"><label>视频 URL</label><input type="text" name="video_url" value="{{ if .Post }}{{ .Post.VideoURL }}{{ end }}" placeholder="https://...mp4"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">图片上传<input type="file" accept="image/*" style="display:none;" onchange="uploadMedia(this,'image','cover_image')"></label>
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">音频上传<input type="file" accept="audio/*" style="display:none;" onchange="uploadMedia(this,'audio','audio_url')"></label>
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">视频上传<input type="file" accept="video/*" style="display:none;" onchange="uploadMedia(this,'video','video_url')"></label>
+            </div>
+            {{ if .Post.CoverImage }}
+            <div style="margin-top:8px;"><img src="{{ .Post.CoverImage }}" alt="封面预览" style="max-width:200px;border-radius:8px;"></div>
+            {{ end }}
+        </div>
+
+        <!-- ============ Markdown 编辑器 ============ -->
+        <div class="form-section" style="padding:0;overflow:hidden;">
+            <div class="md-editor" id="md-editor">
+                <!-- === Editor Header === -->
+                <div class="md-header">
+                    <div class="md-header-left">
+                        <button type="button" class="md-mode-btn active" data-mode="split" onclick="setMode('split')">分屏</button>
+                        <button type="button" class="md-mode-btn" data-mode="edit" onclick="setMode('edit')">编辑</button>
+                        <button type="button" class="md-mode-btn" data-mode="preview" onclick="setMode('preview')">预览</button>
+                        <span class="md-header-sep"></span>
+                        <button type="button" class="md-icon-btn" title="图片上传" onclick="document.getElementById('md-img-upload').click()">🖼</button>
+                        <input type="file" id="md-img-upload" accept="image/*" style="display:none;" onchange="uploadMdImage(this)">
+                    </div>
+                    <div class="md-header-right">
+                        <button type="button" class="md-icon-btn" title="全屏模式" onclick="toggleFullscreen()">⛶</button>
+                    </div>
+                </div>
+
+                <!-- === Toolbar === -->
+                <div class="md-toolbar">
+                    <span class="md-tb-label">文本</span>
+                    <button type="button" title="粗体 Ctrl+B" onclick="wrapMD('**','**','粗体')"><span class="md-tb-bold">B</span></button>
+                    <button type="button" title="斜体 Ctrl+I" onclick="wrapMD('*','*','斜体')"><span class="md-tb-italic">I</span></button>
+                    <button type="button" title="删除线" onclick="wrapMD('~~','~~','删除')"><s>S</s></button>
+                    <span class="md-tb-sep"></span>
+                    <span class="md-tb-label">标题</span>
+                    <button type="button" title="标题1" onclick="lineMD('# ')">H1</button>
+                    <button type="button" title="标题2" onclick="lineMD('## ')">H2</button>
+                    <button type="button" title="标题3" onclick="lineMD('### ')">H3</button>
+                    <span class="md-tb-sep"></span>
+                    <span class="md-tb-label">块</span>
+                    <button type="button" title="无序列表" onclick="lineMD('- ')">• 列表</button>
+                    <button type="button" title="有序列表" onclick="lineMD('1. ')">1. 列表</button>
+                    <button type="button" title="任务列表" onclick="lineMD('- [ ] ')">☐ 任务</button>
+                    <button type="button" title="引用" onclick="lineMD('> ')">❝ 引用</button>
+                    <span class="md-tb-sep"></span>
+                    <span class="md-tb-label">插入</span>
+                    <button type="button" title="链接 Ctrl+K" onclick="insertLink()">🔗 链接</button>
+                    <button type="button" title="图片" onclick="insertImageUrl()">🖼 图片</button>
+                    <button type="button" title="表格" onclick="insertTable()">⊞ 表格</button>
+                    <button type="button" title="分割线" onclick="insertRaw('\n---\n')">— 分割</button>
+                    <span class="md-tb-sep"></span>
+                    <span class="md-tb-label">代码</span>
+                    <button type="button" title="行内代码" onclick="wrapMD('`','`','代码')"><span class="md-tb-code">&lt;/&gt;</span></button>
+                    <button type="button" title="代码块" onclick="insertCodeBlock()">{ } 代码块</button>
+                </div>
+
+                <!-- === Editor Body === -->
+                <div class="md-body">
+                    <div class="md-pane" id="pane-edit" style="display:flex;">
+                        <div class="md-input-wrap" id="md-input-wrap">
+                            <div class="md-line-numbers" id="md-line-nums"><span>1</span></div>
+                            <div class="md-input-pane">
+                                <textarea name="content" id="md-input" placeholder="开始用 Markdown 书写...
+支持标题、粗体、斜体、代码块、图片、链接等格式。
+可直接拖拽图片到编辑器上传，或 Ctrl+V 粘贴图片。
+
+Happy writing! ✨">{{ if .Post }}{{ .Post.Content }}{{ end }}</textarea>
+                            </div>
+                            <div class="md-drop-overlay" id="md-drop-overlay">释放以上传图片</div>
+                        </div>
+                    </div>
+                    <div class="md-pane" id="pane-preview" style="display:flex;">
+                        <div class="md-preview-pane" id="md-preview">
+                            <div class="md-preview-body" id="md-preview-body"><div class="preview-empty"><div class="pe-icon">📝</div><div class="pe-title">开始书写，实时预览</div><div class="pe-hint">支持 Markdown 语法 · 图片拖拽上传 · 代码高亮</div></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- === Status Bar === -->
+                <div class="md-status-bar">
+                    <div class="md-status-left">
+                        <span id="md-cursor">行 1, 列 1</span>
+                        <span id="md-chars">0 字符</span>
+                        <span id="md-readtime">约 0 分钟阅读</span>
+                    </div>
+                    <div class="md-status-right">
+                        <span id="md-status-saved" class="md-status-saved"><span class="md-status-dot dot-green"></span>已保存</span>
+                        <span id="md-status-unsaved" class="md-status-unsaved"><span class="md-status-dot dot-orange"></span>未保存</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Fullscreen close button -->
+            <button type="button" class="md-fullscreen-close" id="md-fs-close" onclick="toggleFullscreen()">✕</button>
+        </div>
+
+        <!-- ============ Actions ============ -->
+        <div style="display:flex;gap:12px;margin-top:16px;">
+            <button type="submit" class="btn btn-primary" style="font-size:15px;padding:12px 32px;">{{ if .IsEdit }}保存修改{{ else }}发布文章{{ end }}</button>
+            <a href="{{ adminPrefix }}/posts" class="btn btn-outline">取消</a>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+// =============================================
+// Markdown Editor — Core References
+// =============================================
+const editor   = document.getElementById('md-editor');
+const input    = document.getElementById('md-input');
+const preview  = document.getElementById('md-preview-body');
+const paneEdit = document.getElementById('pane-edit');
+const panePrev = document.getElementById('pane-preview');
+const lineNums = document.getElementById('md-line-nums');
+const dropOver = document.getElementById('md-drop-overlay');
+const fsClose  = document.getElementById('md-fs-close');
+let   mdMode   = 'split'; // split | edit | preview
+let   isDirty   = false;
+let   saveTimer = null;
+
+// =============================================
+// Mode Switching
+// =============================================
+function setMode(mode) {
+    mdMode = mode;
+    document.querySelectorAll('.md-mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-mode="'+mode+'"]').classList.add('active');
+
+    if (mode === 'edit') {
+        paneEdit.style.display = 'flex';
+        paneEdit.style.flex = '1';
+        panePrev.style.display = 'none';
+    } else if (mode === 'preview') {
+        paneEdit.style.display = 'none';
+        panePrev.style.display = 'flex';
+        panePrev.style.flex = '1';
+        panePrev.querySelector('.md-preview-pane').classList.add('full-preview');
+        renderPreview();
+    } else {
+        paneEdit.style.display = 'flex';
+        paneEdit.style.flex = '1';
+        panePrev.style.display = 'flex';
+        panePrev.style.flex = '1';
+        panePrev.querySelector('.md-preview-pane').classList.remove('full-preview');
+        renderPreview();
+    }
+    input.focus();
+}
+
+// =============================================
+// Fullscreen
+// =============================================
+function toggleFullscreen() {
+    editor.classList.toggle('fullscreen');
+    fsClose.classList.toggle('visible');
+    if (editor.classList.contains('fullscreen')) {
+        input.style.minHeight = 'calc(100vh - 130px)';
+    } else {
+        input.style.minHeight = '430px';
+    }
+    input.focus();
+}
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && editor.classList.contains('fullscreen')) {
+        toggleFullscreen();
+    }
+});
+
+// =============================================
+// Line Numbers
+// =============================================
+function updateLineNumbers() {
+    const lines = input.value.split('\n');
+    const count = Math.max(lines.length, 1);
+    let html = '';
+    for (let i = 1; i <= count; i++) html += '<span>' + i + '</span>';
+    lineNums.innerHTML = html;
+    // Sync scroll
+    lineNums.scrollTop = input.scrollTop;
+}
+
+input.addEventListener('scroll', function() {
+    lineNums.scrollTop = input.scrollTop;
+});
+
+// =============================================
+// Markdown → HTML Renderer
+// =============================================
+function renderMD(text) {
+    if (!text.trim()) return '<div class="preview-empty"><div class="pe-icon">📝</div><div class="pe-title">开始书写，实时预览</div><div class="pe-hint">支持 Markdown 语法 · 图片拖拽上传 · 代码高亮</div></div>';
+    let html = text;
+
+    // Escape HTML first (except in code blocks)
+    const codeBlocks = [];
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
+        codeBlocks.push({ lang: lang || '', code: code.trimEnd() });
+        return '%%CODEBLOCK_' + (codeBlocks.length - 1) + '%%';
+    });
+
+    // Inline code
+    const inlineCodes = [];
+    html = html.replace(/`([^`]+)`/g, function(_, code) {
+        inlineCodes.push(code);
+        return '%%ICODE_' + (inlineCodes.length - 1) + '%%';
+    });
+
+    // Escape remaining HTML
+    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Restore inline code
+    html = html.replace(/%%ICODE_(\d+)%%/g, function(_, id) {
+        return '<code>' + inlineCodes[parseInt(id)] + '</code>';
+    });
+
+    // Headers
+    html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+    // HR
+    html = html.replace(/^(\*{3,}|-{3,}|_{3,})$/gm, '<hr>');
+
+    // Blockquote
+    html = html.replace(/^&gt;\s?(.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // Images
+    html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, '<img src="$2" alt="$1" title="$3">');
+
+    // Links
+    html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, '<a href="$2" title="$3" target="_blank">$1</a>');
+
+    // Bold+Italic, Bold, Italic, Strikethrough
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<b><i>$1</i></b>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<i>$1</i>');
+    html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+
+    // Task lists
+    html = html.replace(/^- \[x\] (.+)$/gm, '<li><input type="checkbox" checked disabled>$1</li>');
+    html = html.replace(/^- \[ \] (.+)$/gm, '<li><input type="checkbox" disabled>$1</li>');
+
+    // Unordered lists
+    html = html.replace(/^[-*+] (.+)$/gm, '<li>$1</li>');
+
+    // Ordered lists
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+    // Wrap adjacent <li> in <ul> or <ol>
+    html = html.replace(/((?:<li>[^<]*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+    // Paragraphs
+    html = html.replace(/^(?!<[a-z/!]|<\/|$|%)(.+)$/gm, '<p>$1</p>');
+    html = html.replace(/<p>\s*<\/p>/g, '');
+
+    // Tables
+    html = html.replace(/^\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/gm, function(_, header, rows) {
+        const headers = header.split('|').filter(c => c.trim()).map(c => '<th>' + c.trim() + '</th>').join('');
+        const body = rows.trim().split('\n').map(row => {
+            const cells = row.split('|').filter(c => c.trim()).map(c => '<td>' + c.trim() + '</td>').join('');
+            return '<tr>' + cells + '</tr>';
+        }).join('');
+        return '<table><thead><tr>' + headers + '</tr></thead><tbody>' + body + '</tbody></table>';
+    });
+
+    // Restore code blocks with syntax highlighting
+    html = html.replace(/%%CODEBLOCK_(\d+)%%/g, function(_, id) {
+        const cb = codeBlocks[parseInt(id)];
+        const escaped = cb.code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const cls = cb.lang ? ' class="language-' + cb.lang + '"' : '';
+        return '<pre><code' + cls + '>' + escaped + '</code></pre>';
+    });
+
+    return html;
+}
+
+function renderPreview() {
+    preview.innerHTML = renderMD(input.value);
+    // Apply highlight.js to code blocks
+    preview.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+    });
+}
+
+// Live preview (debounced)
+let renderTimer = null;
+input.addEventListener('input', function() {
+    markDirty();
+    updateLineNumbers();
+    updateStatusBar();
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(renderPreview, 150);
+});
+
+// =============================================
+// Status Bar
+// =============================================
+function updateStatusBar() {
+    const text = input.value;
+    const before = text.substring(0, input.selectionStart);
+    const lines = before.split('\n');
+    const line = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+    document.getElementById('md-cursor').textContent = '行 ' + line + ', 列 ' + col;
+
+    const chars = text.replace(/\s/g, '').length;
+    document.getElementById('md-chars').textContent = chars + ' 字符';
+
+    const wordsPerMinute = 300;
+    const mins = Math.max(1, Math.ceil(chars / wordsPerMinute));
+    document.getElementById('md-readtime').textContent = '约 ' + mins + ' 分钟阅读';
+}
+
+function markDirty() {
+    if (!isDirty) {
+        isDirty = true;
+        document.getElementById('md-status-saved').style.display = 'none';
+        document.getElementById('md-status-unsaved').style.display = 'inline';
+    }
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(autoSaveDraft, 1500);
+}
+
+function autoSaveDraft() {
+    const slug = document.getElementById('post-slug').value || 'new';
+    try {
+        localStorage.setItem('md-draft-' + slug, input.value);
+    } catch(e) {}
+    isDirty = false;
+    document.getElementById('md-status-saved').style.display = 'inline';
+    document.getElementById('md-status-unsaved').style.display = 'none';
+}
+
+// =============================================
+// Toolbar Helpers
+// =============================================
+function wrapMD(before, after, placeholder) {
+    const s = input.selectionStart, e = input.selectionEnd;
+    const sel = input.value.substring(s, e) || placeholder;
+    input.value = input.value.substring(0, s) + before + sel + after + input.value.substring(e);
+    input.setSelectionRange(s + before.length, s + before.length + sel.length);
+    input.focus(); input.dispatchEvent(new Event('input'));
+}
+
+function lineMD(prefix) {
+    const s = input.selectionStart;
+    const lineStart = input.value.lastIndexOf('\n', s - 1) + 1;
+    input.value = input.value.substring(0, lineStart) + prefix + input.value.substring(lineStart);
+    input.setSelectionRange(lineStart + prefix.length, lineStart + prefix.length);
+    input.focus(); input.dispatchEvent(new Event('input'));
+}
+
+function insertRaw(str) {
+    const s = input.selectionStart;
+    input.value = input.value.substring(0, s) + str + input.value.substring(s);
+    input.setSelectionRange(s + str.length, s + str.length);
+    input.focus(); input.dispatchEvent(new Event('input'));
+}
+
+function insertLink() {
+    const s = input.selectionStart, e = input.selectionEnd;
+    const sel = input.value.substring(s, e) || '链接文字';
+    const url = prompt('输入链接 URL:', 'https://');
+    if (url) {
+        input.value = input.value.substring(0, s) + '[' + sel + '](' + url + ')' + input.value.substring(e);
+        input.focus(); input.dispatchEvent(new Event('input'));
+    }
+}
+
+function insertImageUrl() {
+    const s = input.selectionStart, e = input.selectionEnd;
+    const alt = input.value.substring(s, e) || '图片';
+    const url = prompt('输入图片 URL:', 'https://');
+    if (url) {
+        input.value = input.value.substring(0, s) + '![' + alt + '](' + url + ')\n' + input.value.substring(e);
+        input.focus(); input.dispatchEvent(new Event('input'));
+    }
+}
+
+function insertCodeBlock() {
+    const lang = prompt('语言类型（如 go, python, javascript，留空不指定）:', '');
+    const s = input.selectionStart, e = input.selectionEnd;
+    const sel = input.value.substring(s, e) || '// 代码';
+    input.value = input.value.substring(0, s) + '\n```' + (lang || '') + '\n' + sel + '\n```\n' + input.value.substring(e);
+    input.focus(); input.dispatchEvent(new Event('input'));
+}
+
+function insertTable() {
+    const cols = parseInt(prompt('列数:', '3')) || 3;
+    const rows = parseInt(prompt('行数:', '3')) || 3;
+    let t = '| ' + Array(cols).fill('列标题').join(' | ') + ' |\n';
+    t += '| ' + Array(cols).fill(':---').join(' | ') + ' |\n';
+    for (let i = 0; i < rows; i++) t += '| ' + Array(cols).fill('内容').join(' | ') + ' |\n';
+    const s = input.selectionStart;
+    input.value = input.value.substring(0, s) + '\n' + t + '\n' + input.value.substring(s);
+    input.focus(); input.dispatchEvent(new Event('input'));
+}
+
+// =============================================
+// Keyboard Shortcuts
+// =============================================
+input.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+            case 'b': e.preventDefault(); wrapMD('**', '**', '粗体'); break;
+            case 'i': e.preventDefault(); wrapMD('*', '*', '斜体'); break;
+            case 'k': e.preventDefault(); insertLink(); break;
+            case 's': e.preventDefault(); autoSaveDraft(); break;
+        }
+    }
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        wrapMD('    ', '', '');
+    }
+});
+
+// =============================================
+// Image Drag & Drop / Paste Upload
+// =============================================
+const inputWrap = document.getElementById('md-input-wrap');
+
+['dragenter', 'dragover'].forEach(ev => {
+    inputWrap.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        dropOver.classList.add('active');
+    });
+});
+
+['dragleave', 'drop'].forEach(ev => {
+    inputWrap.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        dropOver.classList.remove('active');
+    });
+});
+
+inputWrap.addEventListener('drop', function(e) {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) handleImageUpload(files[0]);
+});
+
+input.addEventListener('paste', function(e) {
+    const items = e.clipboardData.items;
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            handleImageUpload(item.getAsFile());
+            break;
+        }
+    }
+});
+
+function uploadMdImage(fileInput) {
+    if (fileInput.files.length > 0) handleImageUpload(fileInput.files[0]);
+}
+
+async function handleImageUpload(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        // Show uploading indicator
+        const placeholder = '\n![上传中...]()\n';
+        const s = input.selectionStart, e = input.selectionEnd;
+        input.value = input.value.substring(0, s) + placeholder + input.value.substring(e);
+        input.dispatchEvent(new Event('input'));
+
+        const resp = await fetch('{{ adminPrefix }}/upload?type=image', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.url) {
+            const mdImg = '![' + (file.name || '图片') + '](' + data.url + ')';
+            input.value = input.value.replace(placeholder, '\n' + mdImg + '\n');
+            input.dispatchEvent(new Event('input'));
+        } else {
+            input.value = input.value.replace(placeholder, '');
+            alert('上传失败: ' + (data.error || '未知错误'));
+        }
+    } catch(e) {
+        alert('上传失败: ' + e.message);
+    }
+}
+
+// =============================================
+// Media Upload (cover/audio/video)
+// =============================================
+async function uploadMedia(input, type, targetField) {
+    const file = input.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const resp = await fetch('{{ adminPrefix }}/upload?type=' + type, { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.url) {
+            document.querySelector('input[name="' + targetField + '"]').value = data.url;
+            input.value = ''; // reset
+            alert('上传成功! URL 已填入');
+        } else {
+            alert('上传失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        alert('上传失败: ' + e.message);
+    }
+}
+
+// =============================================
+// Auto Slug
+// =============================================
+const titleInput = document.getElementById('post-title');
+const slugInput = document.getElementById('post-slug');
+titleInput.addEventListener('input', function() {
+    if (!slugInput.dataset.manual) {
+        slugInput.value = this.value.toLowerCase()
+            .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-').replace(/^-+|-+$/g, '');
+    }
+});
+slugInput.addEventListener('input', function() { this.dataset.manual = 'true'; });
+
+// =============================================
+// Form Submit
+// =============================================
+document.getElementById('post-form').addEventListener('submit', function() {
+    if (!slugInput.dataset.manual) {
+        slugInput.value = slugInput.value || titleInput.value.toLowerCase()
+            .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    autoSaveDraft();
+    localStorage.removeItem('md-draft-' + (slugInput.value || 'new'));
+});
+
+// =============================================
+// Initialization
+// =============================================
+// Restore draft
+(function() {
+    const draft = localStorage.getItem('md-draft-' + (slugInput.value || 'new'));
+    if (draft && !input.value.trim()) {
+        input.value = draft;
+    }
+})();
+
+updateLineNumbers();
+updateStatusBar();
+if (input.value.trim()) renderPreview();
+input.focus();
+</script>
+</body>
+</html>

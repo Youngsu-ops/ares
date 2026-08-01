@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - {{ .SiteName }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-container">
+    <h2>注册</h2>
+    <p class="subtitle">加入 {{ .SiteName }}，探索更多内容</p>
+    {{ if .Error }}<div class="alert-error">{{ .Error }}</div>{{ end }}
+    <form method="POST" action="/auth/register">
+        <div class="form-group"><label>用户名</label><input type="text" name="username" placeholder="3-32位字母数字下划线" required autocomplete="username"></div>
+        <div class="form-group"><label>邮箱（选填）</label><input type="email" name="email" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="form-group"><label>密码</label><input type="password" name="password" placeholder="至少6位" required minlength="6" autocomplete="new-password"></div>
+        <div class="form-group"><label>确认密码</label><input type="password" name="confirm_password" required minlength="6" autocomplete="new-password"></div>
+        <button type="submit" class="btn btn-primary">注册</button>
+    </form>
+    <p class="auth-link">已有账号？<a href="/auth/login">立即登录</a></p>
+    <p class="auth-link"><a href="/">返回首页</a></p>
+</div>
+</body>
+</html>

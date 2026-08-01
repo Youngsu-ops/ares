@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - {{ .SiteName }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar"><div class="nav-container">
+    <a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a>
+    <div class="nav-links">
+        <a href="{{ adminPrefix }}/posts">文章</a><a href="{{ adminPrefix }}/sections">板块</a>
+        <a href="{{ adminPrefix }}/categories">分类</a><a href="{{ adminPrefix }}/comments">评论</a>
+        <a href="/">← 访问前台</a><a href="/auth/logout">退出</a>
+    </div>
+</div></nav>
+<div class="container dashboard">
+    <h1>仪表盘</h1>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">{{ .PostCount }}</div><div class="stat-label">文章</div></div>
+        <div class="stat-card"><div class="stat-value">{{ .SectionCount }}</div><div class="stat-label">专栏板块</div></div>
+        <div class="stat-card"><div class="stat-value">{{ .UserCount }}</div><div class="stat-label">用户</div></div>
+        <div class="stat-card"><div class="stat-value">{{ .CommentCount }}</div><div class="stat-label">评论总数</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:#FF9500;">{{ .PendingComments }}</div><div class="stat-label">待审核评论</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:#34C759;">¥{{ printf "%.0f" .TotalRevenue }}</div><div class="stat-label">付费收入</div></div>
+    </div>
+</div>
+</body>
+</html>

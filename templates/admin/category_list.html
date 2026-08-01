@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>分类管理 - {{ .SiteName }}</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a><div class="nav-links"><a href="{{ adminPrefix }}/posts">文章</a><a href="{{ adminPrefix }}/sections">板块</a><a href="{{ adminPrefix }}/categories">分类</a><a href="{{ adminPrefix }}/comments">评论</a></div></div></nav>
+<div class="container" style="max-width:600px;">
+    <h1 class="page-title">分类管理</h1>
+    <form method="POST" action="{{ adminPrefix }}/categories" style="display:flex;gap:8px;margin-bottom:24px;">
+        <input type="text" name="name" placeholder="分类名称" required style="flex:1;padding:10px 14px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;">
+        <input type="text" name="slug" placeholder="slug" style="width:120px;padding:10px 14px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;">
+        <button class="btn btn-primary">添加</button>
+    </form>
+    <table class="admin-table"><thead><tr><th>ID</th><th>名称</th><th>Slug</th><th>操作</th></tr></thead><tbody>
+    {{ range .Categories }}<tr><td>{{ .ID }}</td><td>{{ .Name }}</td><td>{{ .Slug }}</td><td><button class="action-del" onclick="del({{ .ID }})">删除</button></td></tr>{{ end }}
+    </tbody></table>
+</div>
+<script>function del(id) { if(confirm('删除？')) { fetch('{{ adminPrefix }}/categories/'+id,{method:'DELETE'}).then(r=>{ if(r.ok) location.reload(); }); } }</script>
+</body>
+</html>

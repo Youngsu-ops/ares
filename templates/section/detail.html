@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links"><a href="/">首页</a><a href="/sections">专栏</a><a href="/about">关于</a></div>
+        <div class="nav-user">
+            {{ if .CurrentUser }}
+            <span class="nav-avatar">{{ slice .CurrentUser.Username 0 1 }}</span><a href="/auth/logout">退出</a>
+            {{ else }}<a href="/auth/login">登录</a><a href="/auth/register">注册</a>{{ end }}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="content-layout">
+        <div class="content-main">
+            {{ if .Section.CoverImage }}
+            <img src="{{ .Section.CoverImage }}" alt="{{ .Section.Name }}" style="width:100%;height:240px;object-fit:cover;border-radius:20px;margin-bottom:24px;">
+            {{ end }}
+            <h1 class="page-title">{{ .Section.Name }}</h1>
+            <p style="color:#6e6e73;margin-bottom:8px;">{{ .Section.Description }}</p>
+            <p style="font-size:24px;font-weight:700;color:#007AFF;margin-bottom:28px;">{{ formatPrice .Section.Price }}</p>
+
+            {{ if and (gt .Section.Price 0.0) (not .HasAccess) }}
+            <div class="purchase-card">
+                <div class="lock-icon">🔒</div>
+                <h2>{{ .Section.Name }}</h2>
+                <p>{{ .Section.Description }}</p>
+                <div class="price">{{ formatPrice .Section.Price }}</div>
+                {{ if .CurrentUser }}
+                <a href="/section/{{ .Section.Slug }}/purchase" class="btn btn-primary">立即购买</a>
+                {{ else }}
+                <p style="color:#86868b;">请先<a href="/auth/login" style="color:#007AFF;">登录</a></p>
+                {{ end }}
+            </div>
+            {{ else }}
+            <div style="margin-top:20px;">
+                {{ range .Posts }}
+                <a href="/post/{{ .Slug }}" style="display:flex;align-items:center;gap:16px;padding:18px;margin-bottom:8px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.08);border-radius:16px;text-decoration:none;color:inherit;transition:all 0.2s;">
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:15px;">{{ .Title }}</div>
+                        <div style="font-size:12px;color:#86868b;margin-top:4px;">{{ dateFmt .CreatedAt }} · {{ .Views }} 阅读</div>
+                    </div>
+                    <span style="color:#007AFF;font-size:20px;">→</span>
+                </a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+        <aside class="content-sidebar">
+            <div class="sidebar-section"><h3>分类</h3><ul>{{ range .Categories }}<li><a href="/category/{{ .Slug }}">{{ .Name }}</a></li>{{ end }}</ul></div>
+        </aside>
+    </div>
+</div>
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

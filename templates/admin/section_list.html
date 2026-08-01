@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>板块管理 - {{ .SiteName }}</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a><div class="nav-links"><a href="{{ adminPrefix }}/posts">文章</a><a href="{{ adminPrefix }}/sections">板块</a><a href="{{ adminPrefix }}/categories">分类</a><a href="{{ adminPrefix }}/comments">评论</a><a href="/">← 前台</a></div></div></nav>
+<div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h1 class="page-title">付费板块管理</h1>
+        <a href="{{ adminPrefix }}/sections/new" class="btn btn-primary">+ 新建板块</a>
+    </div>
+    <table class="admin-table"><thead><tr><th>名称</th><th>Slug</th><th>价格</th><th>操作</th></tr></thead><tbody>
+    {{ range .Sections }}
+    <tr>
+        <td style="font-weight:500;">{{ .Name }}</td>
+        <td>{{ .Slug }}</td>
+        <td>{{ formatPrice .Price }}</td>
+        <td><div class="admin-actions">
+            <a href="{{ adminPrefix }}/sections/{{ .ID }}/edit" class="action-edit">编辑</a>
+            <a href="{{ adminPrefix }}/sections/{{ .ID }}/posts" class="action-edit">管理文章</a>
+            <button onclick="del({{ .ID }})" class="action-del">删除</button>
+        </div></td>
+    </tr>
+    {{ end }}
+    </tbody></table>
+</div>
+<script>function del(id) { if(confirm('确定删除？')) { fetch('{{ adminPrefix }}/sections/'+id,{method:'DELETE'}).then(r=>{ if(r.ok) location.reload(); }); } }</script>
+</body>
+</html>

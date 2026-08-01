@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>评论管理 - {{ .SiteName }}</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a><div class="nav-links"><a href="{{ adminPrefix }}/posts">文章</a><a href="{{ adminPrefix }}/sections">板块</a><a href="{{ adminPrefix }}/comments">评论</a></div></div></nav>
+<div class="container">
+    <h1 class="page-title">评论管理</h1>
+    <table class="admin-table"><thead><tr><th>作者</th><th>文章</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>
+    {{ range .Comments }}
+    <tr>
+        <td>{{ if .User }}{{ .User.Username }}{{ else }}{{ .Author }}{{ end }}</td>
+        <td>{{ if .Post }}<a href="/post/{{ .Post.Slug }}" style="color:#007AFF;">{{ .Post.Title }}</a>{{ end }}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ .Content }}</td>
+        <td>{{ if eq .Status "approved" }}<span style="color:#34C759;">已通过</span>
+            {{ else if eq .Status "rejected" }}<span style="color:#FF3B30;">已拒绝</span>
+            {{ else }}<span style="color:#FF9500;">待审核</span>{{ end }}
+        </td>
+        <td>{{ dateFmt .CreatedAt }}</td>
+        <td><div class="admin-actions">
+            {{ if ne .Status "approved" }}<form method="POST" action="{{ adminPrefix }}/comments/{{ .ID }}/approve" style="display:inline;"><button class="action-edit">通过</button></form>{{ end }}
+            {{ if ne .Status "rejected" }}<form method="POST" action="{{ adminPrefix }}/comments/{{ .ID }}/reject" style="display:inline;"><button class="action-del">拒绝</button></form>{{ end }}
+            <button onclick="del({{ .ID }})" class="action-del">删除</button>
+        </div></td>
+    </tr>
+    {{ end }}
+    </tbody></table>
+</div>
+<script>function del(id) { if(confirm('永久删除？')) { fetch('{{ adminPrefix }}/comments/'+id,{method:'DELETE'}).then(r=>{ if(r.ok) location.reload(); }); } }</script>
+</body>
+</html>

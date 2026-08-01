@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links"><a href="/">首页</a><a href="/sections">专栏</a><a href="/about">关于</a></div>
+        <div class="nav-user">
+            {{ if .CurrentUser }}
+            <span class="nav-avatar">{{ slice .CurrentUser.Username 0 1 }}</span><a href="/auth/logout">退出</a>
+            {{ else }}<a href="/auth/login">登录</a><a href="/auth/register">注册</a>{{ end }}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h1 class="page-title">专栏</h1>
+    <p style="color:#6e6e73;margin-bottom:24px;">探索精选内容，订阅你感兴趣的专栏</p>
+    <div class="section-grid">
+        {{ range .Sections }}
+        <a href="/section/{{ .Slug }}" class="section-card" style="text-decoration:none;color:inherit;">
+            {{ if .CoverImage }}<img class="section-cover" src="{{ .CoverImage }}" alt="{{ .Name }}">{{ end }}
+            <div class="section-card-body">
+                <h3>{{ .Name }}</h3>
+                <p>{{ .Description }}</p>
+                <div>
+                    <span class="section-price">{{ formatPrice .Price }}</span>
+                    <span style="margin-left:8px;color:#86868b;font-size:13px;">{{ len .Posts }} 篇文章</span>
+                </div>
+                {{ if and (gt .Price 0.0) $.CurrentUser }}
+                    {{ if index $.PurchasedIDs .ID }}
+                    <span class="btn btn-sm btn-success" style="margin-top:8px;">已购买</span>
+                    {{ end }}
+                {{ end }}
+            </div>
+        </a>
+        {{ end }}
+    </div>
+</div>
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

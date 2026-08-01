@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{ template "seo.html" . }}
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "{{ .Post.Title }}",
+      "description": "{{ if .SeoDesc }}{{ .SeoDesc }}{{ else }}{{ .SiteDesc }}{{ end }}",
+      "author": { "@type": "Person", "name": "{{ .SiteAuthor }}" },
+      "datePublished": "{{ .Post.CreatedAt }}",
+      {{ if .Post.UpdatedAt }}"dateModified": "{{ .Post.UpdatedAt }}",{{ end }}
+      "image": "{{ if .SeoImage }}{{ .SeoImage }}{{ end }}",
+      "publisher": {
+        "@type": "Organization",
+        "name": "{{ .SiteName }}"
+      },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ .SeoURL }}" }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "首页", "item": "{{ .SiteURL }}/" },
+        { "@type": "ListItem", "position": 2, "name": "{{ .Post.Title }}", "item": "{{ .SeoURL }}" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-brand">{{ .SiteName }}</a>
+        <div class="nav-links">
+            <a href="/">首页</a>
+            <a href="/sections">专栏</a>
+            <a href="/about">关于</a>
+        </div>
+        <form class="nav-search" action="/search" method="GET">
+            <input type="text" name="q" placeholder="搜索文章...">
+        </form>
+        <div class="nav-user">
+            {{ if .CurrentUser }}
+            <span class="nav-avatar">{{ slice .CurrentUser.Username 0 1 }}</span>
+            <a href="/auth/logout">退出</a>
+            {{ if eq .CurrentUser.Role "admin" }}<a href="{{ adminPrefix }}/dashboard">管理</a>{{ end }}
+            {{ else }}
+            <a href="/auth/login">登录</a>
+            <a href="/auth/register">注册</a>
+            {{ end }}
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <article class="post-detail">
+        <h1>{{ .Post.Title }}</h1>
+        <div class="post-meta">
+            {{ if .Post.Category }}
+            <a href="/category/{{ .Post.Category.Slug }}" class="post-category">{{ .Post.Category.Name }}</a>
+            {{ end }}
+            <span class="post-date">{{ dateFmt .Post.CreatedAt }}</span>
+            <span class="post-views">{{ .Post.Views }} 阅读</span>
+            {{ if gt (len .Post.Sections) 0 }}
+                {{ range .Post.Sections }}
+                    {{ if gt .Price 0.0 }}
+                    <span class="paid-badge">¥{{ printf "%.0f" .Price }}</span>
+                    {{ end }}
+                {{ end }}
+            {{ end }}
+        </div>
+
+        {{ if .Post.Tags }}
+        <div class="post-tags">
+            {{ range .Post.Tags }}
+            <span class="tag">#{{ .Name }}</span>
+            {{ end }}
+        </div>
+        {{ end }}
+
+        {{ if .Post.CoverImage }}
+        <img class="post-cover" src="{{ .Post.CoverImage }}" alt="{{ .Post.Title }}">
+        {{ end }}
+
+        {{ if .Post.AudioURL }}
+        <audio controls src="{{ .Post.AudioURL }}" style="width:100%;margin-bottom:24px;"></audio>
+        {{ end }}
+
+        {{ if .Post.VideoURL }}
+        <video controls src="{{ .Post.VideoURL }}" style="width:100%;border-radius:16px;margin-bottom:24px;"></video>
+        {{ end }}
+
+        <div class="post-body">{{ .HTMLContent }}</div>
+    </article>
+
+    <!-- Comments -->
+    <div class="comments-section" id="comments">
+        <h3>评论 ({{ len .Comments }})</h3>
+        {{ range .Comments }}
+        <div class="comment-card">
+            <div class="comment-author">
+                {{ if .User }}{{ .User.Username }}{{ else }}{{ .Author }}{{ end }}
+            </div>
+            <div class="comment-date">{{ dateFmt .CreatedAt }}</div>
+            <div class="comment-body">{{ .Content }}</div>
+        </div>
+        {{ end }}
+
+        {{ if .CurrentUser }}
+        <form class="comment-form" id="comment-form" method="POST" action="/post/{{ .Post.Slug }}/comment">
+            <textarea name="content" placeholder="写下你的想法..." required></textarea>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;">发布评论</button>
+        </form>
+        {{ else }}
+        <p style="margin-top:24px;color:#86868b;">
+            <a href="/auth/login" style="color:#007AFF;">登录</a>后发表评论
+        </p>
+        {{ end }}
+    </div>
+</div>
+
+<footer><p>&copy; {{ .SiteName }} · {{ .SiteDesc }}</p></footer>
+</body>
+</html>

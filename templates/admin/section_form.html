@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ if .IsEdit }}编辑板块{{ else }}新建板块{{ end }} - {{ .SiteName }}</title><link rel="stylesheet" href="/static/css/style.css"></head>
+<body>
+<nav class="navbar"><div class="nav-container"><a href="{{ adminPrefix }}/dashboard" class="nav-brand">管理后台</a><div class="nav-links"><a href="{{ adminPrefix }}/sections">板块</a><a href="/">← 前台</a></div></div></nav>
+<div class="container" style="max-width:600px;">
+    <h1 class="page-title">{{ if .IsEdit }}编辑板块{{ else }}新建板块{{ end }}</h1>
+    <form method="POST" {{ if .IsEdit }}action="{{ adminPrefix }}/sections/{{ .Section.ID }}/edit"{{ else }}action="{{ adminPrefix }}/sections/new"{{ end }}>
+        <div class="form-section">
+            <div class="form-group"><label>名称</label><input type="text" name="name" value="{{ if .Section }}{{ .Section.Name }}{{ end }}" required></div>
+            <div class="form-group"><label>Slug</label><input type="text" name="slug" value="{{ if .Section }}{{ .Section.Slug }}{{ end }}" required></div>
+            <div class="form-group"><label>描述</label><input type="text" name="description" value="{{ if .Section }}{{ .Section.Description }}{{ end }}"></div>
+            <div class="form-group"><label>封面图片 URL</label><input type="text" name="cover_image" value="{{ if .Section }}{{ .Section.CoverImage }}{{ end }}"></div>
+            <div class="form-group"><label>价格 (元，0=免费)</label><input type="number" name="price" step="0.01" value="{{ if .Section }}{{ printf "%.2f" .Section.Price }}{{ else }}0{{ end }}" min="0"></div>
+        </div>
+        <button type="submit" class="btn btn-primary">{{ if .IsEdit }}保存修改{{ else }}创建板块{{ end }}</button>
+        <a href="{{ adminPrefix }}/sections" class="btn btn-outline">取消</a>
+    </form>
+</div>
+</body>
+</html>

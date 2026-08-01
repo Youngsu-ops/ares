@@ -1,0 +1,46 @@
+# ============================================
+# Youngsu's Blog — .gitignore
+# ============================================
+
+# --- 编译产物 ---
+blog                     # Go 编译二进制
+*.exe
+*.test
+*.out
+vendor/
+
+# --- 数据文件（含敏感用户数据）---
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- 上传文件（用户内容）---
+static/uploads/
+
+# --- 环境变量文件 ---
+.env
+.env.local
+.env.production
+.env.*.local
+
+# --- IDE / 编辑器 ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- 运行时临时文件 ---
+tmp/
+temp/
+*.log
+*.pid
+
+# --- WorkBuddy 项目数据 ---
+.workbuddy/
+
+# --- 依赖 ---
+node_modules/
