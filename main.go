@@ -138,6 +138,11 @@ func main() {
 	template.Must(tmpl.ParseGlob(filepath.Join("templates", "**", "*.html")))
 	r.SetHTMLTemplate(tmpl)
 
+	// ===== Health Check (K8s probe) =====
+	r.GET("/healthz", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	// ===== SEO Routes =====
 	r.GET("/robots.txt", handlers.RobotsTxt)
 	r.GET("/sitemap.xml", handlers.SitemapXML)

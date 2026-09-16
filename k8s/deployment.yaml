@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ares
+  labels:
+    app: ares
+spec:
+  # SQLite 单写者限制：副本数必须为 1，不要配 HPA
+  replicas: 1
+  # RWO 卷无法被两个 Pod 同时挂载，必须先停后起
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ares
+  template:
+    metadata:
+      labels:
+        app: ares
+    spec:
+      # fsGroup 让非 root 容器能写入新供给的卷，否则 SQLite 报 permission denied
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: ares
+          # 本地/CI 构建推送后使用；生产发布建议改成固定版本号
+          image: ghcr.io/youngsu-ops/ares:latest
+          imagePullPolicy: Always   # latest 标签需配合 Always，否则节点会复用旧镜像
+          ports:
+            - containerPort: 8888
+          env:
+            - name: BLOG_PORT
+              value: "8888"
+            - name: GIN_MODE
+              value: "release"
+            - name: BLOG_URL
+              value: "https://blog.kivensu.club"   # 换域名时同步改这里
+            - name: BLOG_ADMIN_PATH
+              value: "admin"
+            # 流量经 Ingress 转发，信任集群网段以正确取到真实客户端 IP（CSRF 校验依赖它）
+            - name: TRUSTED_PROXY
+              value: "0.0.0.0/0"
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ares-secret
+                  key: SESSION_SECRET
+            - name: BLOG_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: ares-secret
+                  key: BLOG_ADMIN_PASS
+          volumeMounts:
+            - name: data
+              mountPath: /app/data            # SQLite: data/blog.db
+            - name: uploads
+              mountPath: /app/static/uploads  # 用户上传的图片/音频/视频
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ares-data
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: ares-uploads

@@ -1,0 +1,27 @@
+# 两个 PVC：数据库与上传文件分开挂载
+# 分离的原因：
+#   1) 避免用 subPath 挂载（subPath 目录权限常导致非 root 容器写失败）
+#   2) 避免同一个卷被双挂载——那会让 blog.db 出现在 /static/uploads/ 下，可被公开下载
+# 存储类用集群默认即可（EKS 的 gp3 / GKE 的 standard-rwo / AKS 的 managed-csi）
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ares-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ares-uploads
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi

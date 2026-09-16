@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ares
+spec:
+  type: ClusterIP
+  selector:
+    app: ares
+  ports:
+    - port: 80
+      targetPort: 8888

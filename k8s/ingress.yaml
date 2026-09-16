@@ -1,0 +1,25 @@
+# nginx-ingress + cert-manager 自动签发 Let's Encrypt 证书
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ares
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "12m"   # 匹配 MaxUploadMB=10
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - blog.kivensu.club
+      secretName: ares-tls
+  rules:
+    - host: blog.kivensu.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ares
+                port:
+                  number: 80

@@ -3,7 +3,10 @@
 # ============================================
 
 # --- 编译产物 ---
-blog                     # Go 编译二进制
+# Go 编译二进制
+blog
+ares
+ares-linux
 *.exe
 *.test
 *.out
@@ -23,6 +26,7 @@ static/uploads/
 .env.local
 .env.production
 .env.*.local
+k8s/secret.yaml
 
 # --- IDE / 编辑器 ---
 .idea/
